@@ -7,10 +7,10 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "br.com.gamoravet.app"
+        applicationId = "br.com.gamoravet.s23test"
         minSdk = 24
         targetSdk = 35
-        versionCode = 2
-        versionName = "0.2.0"
+        versionCode = 3
+        versionName = "0.3.0-s23"
     }
 }
