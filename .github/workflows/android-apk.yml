@@ -1,4 +1,4 @@
-name: Build GamoraVet APK
+name: Build GamoraVet APK and AAB
 
 on:
   workflow_dispatch:
@@ -29,8 +29,8 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
-      - name: Build debug APK
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - name: Build debug APK and AAB
+        run: gradle --no-daemon --stacktrace :app:assembleDebug :app:bundleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
@@ -39,4 +39,9 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-# trigger-build: 2026-08-19
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: GamoraVet-debug-aab
+          path: app/build/outputs/bundle/debug/app-debug.aab
+          if-no-files-found: error
