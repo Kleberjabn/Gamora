@@ -47,43 +47,65 @@ jobs:
           if-no-files-found: error
 
   release-build:
-    if: ${{ secrets.GAMORAVET_KEYSTORE_BASE64 != '' }}
     runs-on: ubuntu-latest
+    env:
+      RELEASE_KEYSTORE_BASE64: ${{ secrets.GAMORAVET_KEYSTORE_BASE64 }}
+      RELEASE_KEYSTORE_PASSWORD: ${{ secrets.GAMORAVET_KEYSTORE_PASSWORD }}
+      RELEASE_KEY_ALIAS: ${{ secrets.GAMORAVET_KEY_ALIAS }}
+      RELEASE_KEY_PASSWORD: ${{ secrets.GAMORAVET_KEY_PASSWORD }}
     steps:
+      - name: Check release signing configuration
+        id: release_config
+        shell: bash
+        run: |
+          if [ -n "$RELEASE_KEYSTORE_BASE64" ] && [ -n "$RELEASE_KEYSTORE_PASSWORD" ] && [ -n "$RELEASE_KEY_ALIAS" ] && [ -n "$RELEASE_KEY_PASSWORD" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Release signing secrets are not configured yet; signed release build will be skipped."
+          fi
+
       - name: Checkout
+        if: ${{ steps.release_config.outputs.configured == 'true' }}
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
+        if: ${{ steps.release_config.outputs.configured == 'true' }}
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Set up Android SDK
+        if: ${{ steps.release_config.outputs.configured == 'true' }}
         uses: android-actions/setup-android@v3
 
       - name: Install Android SDK 35
+        if: ${{ steps.release_config.outputs.configured == 'true' }}
         run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
       - name: Set up Gradle 8.11.1
+        if: ${{ steps.release_config.outputs.configured == 'true' }}
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
 
       - name: Restore upload keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.GAMORAVET_KEYSTORE_BASE64 }}
-        run: echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gamoravet-upload.jks"
+        if: ${{ steps.release_config.outputs.configured == 'true' }}
+        shell: bash
+        run: printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gamoravet-upload.jks"
 
       - name: Build signed release AAB
+        if: ${{ steps.release_config.outputs.configured == 'true' }}
         env:
           GAMORAVET_KEYSTORE_PATH: ${{ runner.temp }}/gamoravet-upload.jks
-          GAMORAVET_KEYSTORE_PASSWORD: ${{ secrets.GAMORAVET_KEYSTORE_PASSWORD }}
-          GAMORAVET_KEY_ALIAS: ${{ secrets.GAMORAVET_KEY_ALIAS }}
-          GAMORAVET_KEY_PASSWORD: ${{ secrets.GAMORAVET_KEY_PASSWORD }}
+          GAMORAVET_KEYSTORE_PASSWORD: ${{ env.RELEASE_KEYSTORE_PASSWORD }}
+          GAMORAVET_KEY_ALIAS: ${{ env.RELEASE_KEY_ALIAS }}
+          GAMORAVET_KEY_PASSWORD: ${{ env.RELEASE_KEY_PASSWORD }}
         run: gradle --no-daemon --stacktrace :app:bundleRelease
 
       - name: Upload Play Store AAB
+        if: ${{ steps.release_config.outputs.configured == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: GamoraVet-1.0.0-playstore-aab
