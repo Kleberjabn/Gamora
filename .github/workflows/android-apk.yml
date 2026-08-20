@@ -94,7 +94,8 @@ jobs:
         if: ${{ steps.release_config.outputs.configured == 'true' }}
         shell: bash
         run: |
-          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gamoravet-upload.jks"
+          CLEAN_KEYSTORE_BASE64="$(printf '%s' "$RELEASE_KEYSTORE_BASE64" | tr -d '\r\n\t ')"
+          printf '%s' "$CLEAN_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gamoravet-upload.jks"
           test -s "$RUNNER_TEMP/gamoravet-upload.jks"
 
       - name: Build signed release AAB
