@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -71,7 +71,7 @@ jobs:
 
       - name: Set up JDK 17
         if: ${{ steps.release_config.outputs.configured == 'true' }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -93,7 +93,9 @@ jobs:
       - name: Restore upload keystore
         if: ${{ steps.release_config.outputs.configured == 'true' }}
         shell: bash
-        run: printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gamoravet-upload.jks"
+        run: |
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gamoravet-upload.jks"
+          test -s "$RUNNER_TEMP/gamoravet-upload.jks"
 
       - name: Build signed release AAB
         if: ${{ steps.release_config.outputs.configured == 'true' }}
@@ -103,6 +105,16 @@ jobs:
           GAMORAVET_KEY_ALIAS: ${{ env.RELEASE_KEY_ALIAS }}
           GAMORAVET_KEY_PASSWORD: ${{ env.RELEASE_KEY_PASSWORD }}
         run: gradle --no-daemon --stacktrace :app:bundleRelease
+
+      - name: Verify release AAB
+        if: ${{ steps.release_config.outputs.configured == 'true' }}
+        shell: bash
+        run: |
+          AAB="app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB"
+          echo "AAB size: $(stat -c%s "$AAB") bytes"
+          jarsigner -verify -verbose -certs "$AAB"
+          sha256sum "$AAB"
 
       - name: Upload Play Store AAB
         if: ${{ steps.release_config.outputs.configured == 'true' }}
