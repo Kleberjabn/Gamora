@@ -39,7 +39,17 @@ public class MainActivity extends Activity {
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
 
         webView.addJavascriptInterface(new GamoraVetBridge(this), "GamoraVetAndroid");
-        webView.setWebViewClient(new WebViewClient());
+        webView.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                if (url != null && url.endsWith("index.html")) {
+                    view.evaluateJavascript(
+                            "(function(){var s=document.createElement('script');s.src='medications-enhancement.js';document.body.appendChild(s);})();",
+                            null);
+                }
+            }
+        });
         webView.setWebChromeClient(new WebChromeClient());
         webView.setFocusable(true);
         webView.setFocusableInTouchMode(true);
