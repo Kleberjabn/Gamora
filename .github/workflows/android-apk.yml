@@ -17,6 +17,7 @@ jobs:
         run: |
           set -euo pipefail
           base64 --decode app/src/main/assets/gamora-official.jpg.b64 > app/src/main/assets/gamora-official.jpg
+          sed -i 's/gamora-mascot\.svg/gamora-official.jpg/g' app/src/main/assets/index.html
           mkdir -p app/src/main/res/drawable app/src/main/res/mipmap-hdpi
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/drawable/gamora_official.jpg
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/mipmap-hdpi/ic_launcher.jpg
@@ -86,6 +87,7 @@ jobs:
         run: |
           set -euo pipefail
           base64 --decode app/src/main/assets/gamora-official.jpg.b64 > app/src/main/assets/gamora-official.jpg
+          sed -i 's/gamora-mascot\.svg/gamora-official.jpg/g' app/src/main/assets/index.html
           mkdir -p app/src/main/res/drawable app/src/main/res/mipmap-hdpi
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/drawable/gamora_official.jpg
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/mipmap-hdpi/ic_launcher.jpg
