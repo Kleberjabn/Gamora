@@ -66,37 +66,33 @@ public class MainActivity extends Activity {
     }
 
     public static class GamoraVetBridge {
-        private final Context context;
+        private final Activity activity;
 
-        GamoraVetBridge(Context context) {
-            this.context = context;
+        GamoraVetBridge(Activity activity) {
+            this.activity = activity;
         }
 
         @JavascriptInterface
         public boolean notificationsAvailable() {
-            return Build.VERSION.SDK_INT < 33 || context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
+            return Build.VERSION.SDK_INT < 33 || activity.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED;
         }
 
         @JavascriptInterface
         public void scheduleNotification(int id, long timestampMs, String title, String text) {
             if (timestampMs <= System.currentTimeMillis()) return;
-            Intent intent = new Intent(context, NotificationReceiver.class);
+            Intent intent = new Intent(activity, NotificationReceiver.class);
             intent.putExtra("id", id);
             intent.putExtra("title", title);
             intent.putExtra("text", text);
 
             PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                    context, id, intent,
+                    activity, id, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+            AlarmManager alarmManager = (AlarmManager) activity.getSystemService(Context.ALARM_SERVICE);
 
             boolean dailyMedication = title != null && title.toLowerCase().contains("medicamento");
             if (dailyMedication) {
-                alarmManager.setRepeating(
-                        AlarmManager.RTC_WAKEUP,
-                        timestampMs,
-                        AlarmManager.INTERVAL_DAY,
-                        pendingIntent);
+                alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, timestampMs, AlarmManager.INTERVAL_DAY, pendingIntent);
             } else {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestampMs, pendingIntent);
             }
@@ -104,22 +100,30 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void cancelNotification(int id) {
-            Intent intent = new Intent(context, NotificationReceiver.class);
+            Intent intent = new Intent(activity, NotificationReceiver.class);
             PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                    context, id, intent,
+                    activity, id, intent,
                     PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
             if (pendingIntent != null) {
-                AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+                AlarmManager alarmManager = (AlarmManager) activity.getSystemService(Context.ALARM_SERVICE);
                 alarmManager.cancel(pendingIntent);
                 pendingIntent.cancel();
             }
+        }
+
+        @JavascriptInterface
+        public void closeApp() {
+            activity.runOnUiThread(activity::finish);
         }
     }
 
     @Override
     public void onBackPressed() {
-        if (webView != null && webView.canGoBack()) webView.goBack();
-        else super.onBackPressed();
+        if (webView != null) {
+            webView.evaluateJavascript("if(window.gamoraBack){window.gamoraBack();}else if(window.GamoraVetAndroid){GamoraVetAndroid.closeApp();}", null);
+        } else {
+            super.onBackPressed();
+        }
     }
 
     @Override
