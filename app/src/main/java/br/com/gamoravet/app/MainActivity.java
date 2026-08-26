@@ -45,7 +45,16 @@ public class MainActivity extends Activity {
                 super.onPageFinished(view, url);
                 if (url != null && url.endsWith("index.html")) {
                     view.evaluateJavascript(
-                            "(function(){var s=document.createElement('script');s.src='medications-enhancement.js';document.body.appendChild(s);})();",
+                            "(function(){" +
+                            "var meds=document.createElement('script');" +
+                            "meds.src='medications-enhancement.js';" +
+                            "meds.onload=function(){" +
+                            "var fix=document.createElement('script');" +
+                            "fix.src='medication-history-fix.js';" +
+                            "document.body.appendChild(fix);" +
+                            "};" +
+                            "document.body.appendChild(meds);" +
+                            "})();",
                             null);
                 }
             }
