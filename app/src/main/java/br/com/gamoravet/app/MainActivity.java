@@ -89,7 +89,17 @@ public class MainActivity extends Activity {
                     context, id, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestampMs, pendingIntent);
+
+            boolean dailyMedication = title != null && title.toLowerCase().contains("medicamento");
+            if (dailyMedication) {
+                alarmManager.setRepeating(
+                        AlarmManager.RTC_WAKEUP,
+                        timestampMs,
+                        AlarmManager.INTERVAL_DAY,
+                        pendingIntent);
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timestampMs, pendingIntent);
+            }
         }
 
         @JavascriptInterface
