@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - fix/android-workflow-1.0.7
 
 jobs:
   build:
