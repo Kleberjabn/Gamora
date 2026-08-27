@@ -36,8 +36,8 @@ android {
         applicationId = "br.com.gamoravet.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 17
-        versionName = "1.0.5"
+        versionCode = 18
+        versionName = "1.0.6"
     }
 
     buildTypes {
