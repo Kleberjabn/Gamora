@@ -42,21 +42,14 @@ jobs:
         with:
           gradle-version: '8.11.1'
 
-      - name: Build test APK and AAB
-        run: gradle --no-daemon --stacktrace :app:assembleDebug :app:bundleDebug
+      - name: Build debug APK
+        run: gradle --no-daemon --stacktrace :app:assembleDebug
 
-      - name: Upload test APK
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.0.4-test-apk
+          name: GamoraVet-1.0.5-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-
-      - name: Upload test AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: GamoraVet-1.0.4-test-aab
-          path: app/build/outputs/bundle/debug/app-debug.aab
           if-no-files-found: error
 
   release-build:
@@ -67,7 +60,7 @@ jobs:
       RELEASE_KEY_ALIAS: ${{ secrets.GAMORAVET_KEY_ALIAS }}
       RELEASE_KEY_PASSWORD: ${{ secrets.GAMORAVET_KEY_PASSWORD }}
     steps:
-      - name: Check release signing configuration
+      - name: Check permanent signing configuration
         id: release_config
         shell: bash
         run: |
@@ -75,14 +68,14 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           else
             echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Permanent GamoraVet signing secrets are not configured."
+            exit 1
           fi
 
       - name: Checkout
-        if: ${{ steps.release_config.outputs.configured == 'true' }}
         uses: actions/checkout@v4
 
       - name: Restore official Gamora artwork
-        if: ${{ steps.release_config.outputs.configured == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -93,14 +86,12 @@ jobs:
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/mipmap-hdpi/ic_launcher.jpg
 
       - name: Set up JDK 17
-        if: ${{ steps.release_config.outputs.configured == 'true' }}
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Configure Android SDK 35
-        if: ${{ steps.release_config.outputs.configured == 'true' }}
         shell: bash
         run: |
           set -euo pipefail
@@ -110,41 +101,55 @@ jobs:
           "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Set up Gradle 8.11.1
-        if: ${{ steps.release_config.outputs.configured == 'true' }}
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
 
-      - name: Restore upload keystore
-        if: ${{ steps.release_config.outputs.configured == 'true' }}
+      - name: Restore permanent GamoraVet keystore
         shell: bash
         run: |
+          set -euo pipefail
           CLEAN_KEYSTORE_BASE64="$(printf '%s' "$RELEASE_KEYSTORE_BASE64" | tr -d '\r\n\t ')"
           printf '%s' "$CLEAN_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gamoravet-upload.jks"
           test -s "$RUNNER_TEMP/gamoravet-upload.jks"
 
-      - name: Build signed release AAB
-        if: ${{ steps.release_config.outputs.configured == 'true' }}
+      - name: Build signed update APK and Play Store AAB
         env:
           GAMORAVET_KEYSTORE_PATH: ${{ runner.temp }}/gamoravet-upload.jks
           GAMORAVET_KEYSTORE_PASSWORD: ${{ env.RELEASE_KEYSTORE_PASSWORD }}
           GAMORAVET_KEY_ALIAS: ${{ env.RELEASE_KEY_ALIAS }}
           GAMORAVET_KEY_PASSWORD: ${{ env.RELEASE_KEY_PASSWORD }}
-        run: gradle --no-daemon --stacktrace :app:bundleRelease
+        run: gradle --no-daemon --stacktrace :app:assembleRelease :app:bundleRelease
 
-      - name: Verify release AAB
-        if: ${{ steps.release_config.outputs.configured == 'true' }}
+      - name: Verify signed update APK
         shell: bash
         run: |
+          set -euo pipefail
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -s "$APK"
+          APKSIGNER="${ANDROID_HOME}/build-tools/35.0.0/apksigner"
+          "$APKSIGNER" verify --verbose --print-certs "$APK"
+          sha256sum "$APK"
+
+      - name: Verify Play Store AAB
+        shell: bash
+        run: |
+          set -euo pipefail
           AAB="app/build/outputs/bundle/release/app-release.aab"
           test -s "$AAB"
           jarsigner -verify -verbose -certs "$AAB"
           sha256sum "$AAB"
 
-      - name: Upload Play Store AAB
-        if: ${{ steps.release_config.outputs.configured == 'true' }}
+      - name: Upload signed update APK
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.0.4-playstore-aab
+          name: GamoraVet-1.0.5-update-apk
+          path: app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+      - name: Upload Play Store AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: GamoraVet-1.0.5-playstore-aab
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
