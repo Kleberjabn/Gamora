@@ -35,12 +35,15 @@ public class MainActivity extends Activity {
         settings.setDatabaseEnabled(true);
         settings.setLoadsImagesAutomatically(true);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+        webView.clearCache(true);
+        webView.clearHistory();
         webView.addJavascriptInterface(new GamoraVetBridge(this), "GamoraVetAndroid");
         webView.setWebViewClient(new WebViewClient() {
             @Override public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 if (url != null && url.endsWith("index.html")) {
-                    view.evaluateJavascript("(function(){var meds=document.createElement('script');meds.src='medications-enhancement.js';meds.onload=function(){var fix=document.createElement('script');fix.src='medication-history-fix.js';fix.onload=function(){var con=document.createElement('script');con.src='consultations-enhancement.js';document.body.appendChild(con);};document.body.appendChild(fix);};document.body.appendChild(meds);})();", null);
+                    view.evaluateJavascript("(function(){var v='64';var meds=document.createElement('script');meds.src='medications-enhancement.js?v='+v;meds.onload=function(){var fix=document.createElement('script');fix.src='medication-history-fix.js?v='+v;fix.onload=function(){var con=document.createElement('script');con.src='consultations-enhancement.js?v='+v;con.onload=function(){window.__GAMORAVET_CONSULTS_ENHANCED__=true;};document.body.appendChild(con);};document.body.appendChild(fix);};document.body.appendChild(meds);})();", null);
                 }
             }
         });
