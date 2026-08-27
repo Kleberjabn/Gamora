@@ -34,7 +34,7 @@ public class NotificationReceiver extends BroadcastReceiver {
         int id = intent.getIntExtra("id", (int) (System.currentTimeMillis() & 0xfffffff));
 
         android.app.Notification notification = new android.app.Notification.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.app_icon)
                 .setContentTitle(title == null ? "GamoraVet" : title)
                 .setContentText(text == null ? "Você tem um cuidado agendado." : text)
                 .setAutoCancel(true)
