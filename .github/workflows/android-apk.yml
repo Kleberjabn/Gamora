@@ -11,7 +11,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Restore official Gamora artwork
         shell: bash
         run: |
@@ -21,13 +20,11 @@ jobs:
           mkdir -p app/src/main/res/drawable app/src/main/res/mipmap-hdpi
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/drawable/gamora_official.jpg
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/mipmap-hdpi/ic_launcher.jpg
-
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Configure Android SDK 35
         shell: bash
         run: |
@@ -36,19 +33,16 @@ jobs:
           if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
           "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
       - name: Set up Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-
       - name: Build debug APK
         run: gradle --no-daemon --stacktrace :app:assembleDebug
-
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.0.5-debug-apk
+          name: GamoraVet-1.0.6-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -71,10 +65,8 @@ jobs:
             echo "Permanent GamoraVet signing secrets are not configured."
             exit 1
           fi
-
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Restore official Gamora artwork
         shell: bash
         run: |
@@ -84,13 +76,11 @@ jobs:
           mkdir -p app/src/main/res/drawable app/src/main/res/mipmap-hdpi
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/drawable/gamora_official.jpg
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/mipmap-hdpi/ic_launcher.jpg
-
       - name: Set up JDK 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-
       - name: Configure Android SDK 35
         shell: bash
         run: |
@@ -99,12 +89,10 @@ jobs:
           if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
           "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-
       - name: Set up Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-
       - name: Restore permanent GamoraVet keystore
         shell: bash
         run: |
@@ -112,7 +100,6 @@ jobs:
           CLEAN_KEYSTORE_BASE64="$(printf '%s' "$RELEASE_KEYSTORE_BASE64" | tr -d '\r\n\t ')"
           printf '%s' "$CLEAN_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gamoravet-upload.jks"
           test -s "$RUNNER_TEMP/gamoravet-upload.jks"
-
       - name: Build signed update APK and Play Store AAB
         env:
           GAMORAVET_KEYSTORE_PATH: ${{ runner.temp }}/gamoravet-upload.jks
@@ -120,7 +107,6 @@ jobs:
           GAMORAVET_KEY_ALIAS: ${{ env.RELEASE_KEY_ALIAS }}
           GAMORAVET_KEY_PASSWORD: ${{ env.RELEASE_KEY_PASSWORD }}
         run: gradle --no-daemon --stacktrace :app:assembleRelease :app:bundleRelease
-
       - name: Verify signed update APK
         shell: bash
         run: |
@@ -130,7 +116,6 @@ jobs:
           APKSIGNER="${ANDROID_HOME}/build-tools/35.0.0/apksigner"
           "$APKSIGNER" verify --verbose --print-certs "$APK"
           sha256sum "$APK"
-
       - name: Verify Play Store AAB
         shell: bash
         run: |
@@ -139,17 +124,15 @@ jobs:
           test -s "$AAB"
           jarsigner -verify -verbose -certs "$AAB"
           sha256sum "$AAB"
-
       - name: Upload signed update APK
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.0.5-update-apk
+          name: GamoraVet-1.0.6-update-apk
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
-
       - name: Upload Play Store AAB
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.0.5-playstore-aab
+          name: GamoraVet-1.0.6-playstore-aab
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
