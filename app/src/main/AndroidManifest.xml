@@ -7,8 +7,8 @@
         android:allowBackup="true"
         android:label="GamoraVet"
         android:theme="@style/Theme.GamoraVet"
-        android:icon="@drawable/app_icon"
-        android:roundIcon="@drawable/app_icon">
+        android:icon="@drawable/gamora_official"
+        android:roundIcon="@drawable/gamora_official">
 
         <activity
             android:name=".MainActivity"
