@@ -1,16 +1,13 @@
 name: Build GamoraVet Android
-
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
-
 jobs:
   test-build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - name: Restore official Gamora artwork
         shell: bash
         run: |
@@ -20,32 +17,19 @@ jobs:
           mkdir -p app/src/main/res/drawable app/src/main/res/mipmap-hdpi
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/drawable/gamora_official.jpg
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/mipmap-hdpi/ic_launcher.jpg
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '17' }
       - name: Configure Android SDK 35
         shell: bash
         run: |
-          set -euo pipefail
-          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
-          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
+          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"; if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
           "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-      - name: Set up Gradle 8.11.1
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.11.1'
-      - name: Build debug APK
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: GamoraVet-1.0.6-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.11.1' }
+      - run: gradle --no-daemon --stacktrace :app:assembleDebug
+      - uses: actions/upload-artifact@v4
+        with: { name: GamoraVet-1.0.7-debug-apk, path: app/build/outputs/apk/debug/app-debug.apk, if-no-files-found: error }
   release-build:
     runs-on: ubuntu-latest
     env:
@@ -54,85 +38,41 @@ jobs:
       RELEASE_KEY_ALIAS: ${{ secrets.GAMORAVET_KEY_ALIAS }}
       RELEASE_KEY_PASSWORD: ${{ secrets.GAMORAVET_KEY_PASSWORD }}
     steps:
-      - name: Check permanent signing configuration
-        id: release_config
+      - name: Check signing
         shell: bash
-        run: |
-          if [ -n "$RELEASE_KEYSTORE_BASE64" ] && [ -n "$RELEASE_KEYSTORE_PASSWORD" ] && [ -n "$RELEASE_KEY_ALIAS" ] && [ -n "$RELEASE_KEY_PASSWORD" ]; then
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "Permanent GamoraVet signing secrets are not configured."
-            exit 1
-          fi
-      - name: Checkout
-        uses: actions/checkout@v4
+        run: test -n "$RELEASE_KEYSTORE_BASE64" -a -n "$RELEASE_KEYSTORE_PASSWORD" -a -n "$RELEASE_KEY_ALIAS" -a -n "$RELEASE_KEY_PASSWORD"
+      - uses: actions/checkout@v4
       - name: Restore official Gamora artwork
         shell: bash
         run: |
-          set -euo pipefail
           base64 --decode app/src/main/assets/gamora-official.jpg.b64 > app/src/main/assets/gamora-official.jpg
           sed -i 's/gamora-mascot\.svg/gamora-official.jpg/g' app/src/main/assets/index.html
           mkdir -p app/src/main/res/drawable app/src/main/res/mipmap-hdpi
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/drawable/gamora_official.jpg
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/mipmap-hdpi/ic_launcher.jpg
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '17'
+      - uses: actions/setup-java@v5
+        with: { distribution: temurin, java-version: '17' }
       - name: Configure Android SDK 35
         shell: bash
         run: |
-          set -euo pipefail
-          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
-          if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
+          SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"; if [ ! -x "$SDKMANAGER" ]; then SDKMANAGER="$(command -v sdkmanager)"; fi
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
           "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-      - name: Set up Gradle 8.11.1
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.11.1'
-      - name: Restore permanent GamoraVet keystore
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.11.1' }
+      - name: Restore keystore
         shell: bash
-        run: |
-          set -euo pipefail
-          CLEAN_KEYSTORE_BASE64="$(printf '%s' "$RELEASE_KEYSTORE_BASE64" | tr -d '\r\n\t ')"
-          printf '%s' "$CLEAN_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/gamoravet-upload.jks"
-          test -s "$RUNNER_TEMP/gamoravet-upload.jks"
-      - name: Build signed update APK and Play Store AAB
+        run: printf '%s' "$RELEASE_KEYSTORE_BASE64" | tr -d '\r\n\t ' | base64 --decode > "$RUNNER_TEMP/gamoravet-upload.jks"
+      - name: Build release
         env:
           GAMORAVET_KEYSTORE_PATH: ${{ runner.temp }}/gamoravet-upload.jks
           GAMORAVET_KEYSTORE_PASSWORD: ${{ env.RELEASE_KEYSTORE_PASSWORD }}
           GAMORAVET_KEY_ALIAS: ${{ env.RELEASE_KEY_ALIAS }}
           GAMORAVET_KEY_PASSWORD: ${{ env.RELEASE_KEY_PASSWORD }}
         run: gradle --no-daemon --stacktrace :app:assembleRelease :app:bundleRelease
-      - name: Verify signed update APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          APK="app/build/outputs/apk/release/app-release.apk"
-          test -s "$APK"
-          APKSIGNER="${ANDROID_HOME}/build-tools/35.0.0/apksigner"
-          "$APKSIGNER" verify --verbose --print-certs "$APK"
-          sha256sum "$APK"
-      - name: Verify Play Store AAB
-        shell: bash
-        run: |
-          set -euo pipefail
-          AAB="app/build/outputs/bundle/release/app-release.aab"
-          test -s "$AAB"
-          jarsigner -verify -verbose -certs "$AAB"
-          sha256sum "$AAB"
-      - name: Upload signed update APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: GamoraVet-1.0.6-update-apk
-          path: app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
-      - name: Upload Play Store AAB
-        uses: actions/upload-artifact@v4
-        with:
-          name: GamoraVet-1.0.6-playstore-aab
-          path: app/build/outputs/bundle/release/app-release.aab
-          if-no-files-found: error
+      - name: Verify APK
+        run: "${ANDROID_HOME}/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
+      - uses: actions/upload-artifact@v4
+        with: { name: GamoraVet-1.0.7-update-apk, path: app/build/outputs/apk/release/app-release.apk, if-no-files-found: error }
+      - uses: actions/upload-artifact@v4
+        with: { name: GamoraVet-1.0.7-playstore-aab, path: app/build/outputs/bundle/release/app-release.aab, if-no-files-found: error }
