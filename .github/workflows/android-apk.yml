@@ -7,6 +7,7 @@ on:
       - main
       - fix/android-workflow-1.0.7
       - fix/launcher-gamora-1.0.8
+      - feature/auth-lgpd-sharing-1.1
 
 jobs:
   test-build:
@@ -20,6 +21,7 @@ jobs:
           set -euo pipefail
           base64 --decode app/src/main/assets/gamora-official.jpg.b64 > app/src/main/assets/gamora-official.jpg
           sed -i 's/gamora-mascot\.svg/gamora-official.jpg/g' app/src/main/assets/index.html
+          sed -i 's/gamora-mascot\.svg/gamora-official.jpg/g' app/src/main/assets/auth-lgpd-enhancement.js || true
           mkdir -p app/src/main/res/drawable
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/drawable/gamora_official.jpg
       - name: Set up JDK 17
@@ -44,7 +46,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.0.8-debug-apk
+          name: GamoraVet-1.1-auth-lgpd-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -72,6 +74,7 @@ jobs:
           set -euo pipefail
           base64 --decode app/src/main/assets/gamora-official.jpg.b64 > app/src/main/assets/gamora-official.jpg
           sed -i 's/gamora-mascot\.svg/gamora-official.jpg/g' app/src/main/assets/index.html
+          sed -i 's/gamora-mascot\.svg/gamora-official.jpg/g' app/src/main/assets/auth-lgpd-enhancement.js || true
           mkdir -p app/src/main/res/drawable
           cp app/src/main/assets/gamora-official.jpg app/src/main/res/drawable/gamora_official.jpg
       - name: Set up JDK 17
@@ -125,12 +128,12 @@ jobs:
       - name: Upload signed update APK
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.0.8-update-apk
+          name: GamoraVet-1.1-auth-lgpd-update-apk
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
       - name: Upload Play Store AAB
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.0.8-playstore-aab
+          name: GamoraVet-1.1-auth-lgpd-playstore-aab
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
