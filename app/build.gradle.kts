@@ -24,8 +24,8 @@ android {
         applicationId="br.com.gamoravet.app"
         minSdk=24
         targetSdk=35
-        versionCode=24
-        versionName="1.2.1"
+        versionCode=25
+        versionName="1.2.2"
         buildConfigField("String", "SUPABASE_URL", buildConfigString(supabaseUrl))
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", buildConfigString(supabasePublishableKey))
     }
