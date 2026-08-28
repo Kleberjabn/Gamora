@@ -8,11 +8,22 @@ on:
       - fix/android-workflow-1.0.7
       - fix/launcher-gamora-1.0.8
       - feature/auth-lgpd-sharing-1.1
+      - feature/backend-secure-foundation-1.2
+
+env:
+  GAMORAVET_SUPABASE_URL: ${{ secrets.GAMORAVET_SUPABASE_URL }}
+  GAMORAVET_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.GAMORAVET_SUPABASE_PUBLISHABLE_KEY }}
 
 jobs:
   test-build:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Supabase public client configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$GAMORAVET_SUPABASE_URL"
+          test -n "$GAMORAVET_SUPABASE_PUBLISHABLE_KEY"
       - name: Checkout
         uses: actions/checkout@v4
       - name: Restore official Gamora artwork
@@ -46,7 +57,7 @@ jobs:
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.1-auth-lgpd-debug-apk
+          name: GamoraVet-1.2-backend-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -66,6 +77,8 @@ jobs:
           test -n "$RELEASE_KEYSTORE_PASSWORD"
           test -n "$RELEASE_KEY_ALIAS"
           test -n "$RELEASE_KEY_PASSWORD"
+          test -n "$GAMORAVET_SUPABASE_URL"
+          test -n "$GAMORAVET_SUPABASE_PUBLISHABLE_KEY"
       - name: Checkout
         uses: actions/checkout@v4
       - name: Restore official Gamora artwork
@@ -128,12 +141,12 @@ jobs:
       - name: Upload signed update APK
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.1-auth-lgpd-update-apk
+          name: GamoraVet-1.2-backend-update-apk
           path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
       - name: Upload Play Store AAB
         uses: actions/upload-artifact@v4
         with:
-          name: GamoraVet-1.1-auth-lgpd-playstore-aab
+          name: GamoraVet-1.2-backend-playstore-aab
           path: app/build/outputs/bundle/release/app-release.aab
           if-no-files-found: error
